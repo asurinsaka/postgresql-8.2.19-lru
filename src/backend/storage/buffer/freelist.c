@@ -118,16 +118,21 @@ StrategyFreeBuffer(volatile BufferDesc *buf, bool at_head)
 	 */
 	if (buf->freeNext == FREENEXT_NOT_IN_LIST)
 	{
-		if (at_head)
+                
+                if (at_head)
 		{
 			buf->freeNext = StrategyControl->firstFreeBuffer;
+                        buf->freePre = FREE_END_OF_LIST;
 			if (buf->freeNext < 0)
 				StrategyControl->lastFreeBuffer = buf->buf_id;
+                        else
+                                BufferDescriptors[StrategyControl->firstFreeBuffer].freePre = buf->buf_id;
 			StrategyControl->firstFreeBuffer = buf->buf_id;
 		}
 		else
 		{
 			buf->freeNext = FREE_END_OF_LIST;
+                        buf->freePre = StrategyControl->lastFreeBuffer;
 			if (StrategyControl->firstFreeBuffer < 0)
 				StrategyControl->firstFreeBuffer = buf->buf_id;
 			else
