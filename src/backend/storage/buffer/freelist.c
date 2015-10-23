@@ -77,6 +77,7 @@ StrategyGetBuffer(void)
 		/* Unconditionally remove buffer from freelist */
 		StrategyControl->firstFreeBuffer = buf->freeNext;
 		buf->freeNext = FREENEXT_NOT_IN_LIST;
+                buf->freePre = FREENEXT_NOT_IN_LIST;
 
 		/*
 		 * If the buffer is pinned or has a nonzero usage_count, we cannot use
@@ -86,7 +87,10 @@ StrategyGetBuffer(void)
 		 */
 		LockBufHdr(buf);
 		if (buf->refcount == 0 && buf->usage_count == 0)
+                {
+                        elog(LOG, "Get buf %d\n", buf->buf_id);
 			return buf;
+                }
 		UnlockBufHdr(buf);
 	}
 
@@ -128,6 +132,7 @@ StrategyFreeBuffer(volatile BufferDesc *buf, bool at_head)
                         else
                                 BufferDescriptors[StrategyControl->firstFreeBuffer].freePre = buf->buf_id;
 			StrategyControl->firstFreeBuffer = buf->buf_id;
+                        elog(LOG, "Add buf %d\n", buf->buf_id);
 		}
 		else
 		{
@@ -138,6 +143,7 @@ StrategyFreeBuffer(volatile BufferDesc *buf, bool at_head)
 			else
 				BufferDescriptors[StrategyControl->lastFreeBuffer].freeNext = buf->buf_id;
 			StrategyControl->lastFreeBuffer = buf->buf_id;
+                        elog(LOG, "Add buf %d\n", buf->buf_id);
 		}
 	}
 
