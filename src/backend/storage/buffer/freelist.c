@@ -91,40 +91,10 @@ StrategyGetBuffer(void)
 	}
 
 	/* Nothing on the freelist, so run the "clock sweep" algorithm */
-	trycounter = NBuffers;
-	for (;;)
-	{
-		buf = &BufferDescriptors[StrategyControl->nextVictimBuffer];
-
-		if (++StrategyControl->nextVictimBuffer >= NBuffers)
-			StrategyControl->nextVictimBuffer = 0;
-
-		/*
-		 * If the buffer is pinned or has a nonzero usage_count, we cannot use
-		 * it; decrement the usage_count and keep scanning.
-		 */
-		LockBufHdr(buf);
-		if (buf->refcount == 0 && buf->usage_count == 0)
-			return buf;
-		if (buf->usage_count > 0)
-		{
-			buf->usage_count--;
-			trycounter = NBuffers;
-		}
-		else if (--trycounter == 0)
-		{
-			/*
-			 * We've scanned all the buffers without making any state changes,
-			 * so all the buffers are pinned (or were when we looked at them).
-			 * We could hope that someone will free one eventually, but it's
-			 * probably better to fail than to risk getting stuck in an
-			 * infinite loop.
-			 */
-			UnlockBufHdr(buf);
-			elog(ERROR, "no unpinned buffers available");
-		}
-		UnlockBufHdr(buf);
-	}
+        /* this part is removed to remove "clock sweep" if nothing found in 
+         * freelist, nothing available.
+         */
+	
 
 	/* not reached */
 	return NULL;
@@ -157,7 +127,7 @@ StrategyFreeBuffer(volatile BufferDesc *buf, bool at_head)
 		}
 		else
 		{
-			buf->freeNext = FREENEXT_END_OF_LIST;
+			buf->freeNext = FREE_END_OF_LIST;
 			if (StrategyControl->firstFreeBuffer < 0)
 				StrategyControl->firstFreeBuffer = buf->buf_id;
 			else

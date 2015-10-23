@@ -134,6 +134,7 @@ typedef struct sbufdesc
 
 	int			buf_id;			/* buffer's index number (from 0) */
 	int			freeNext;		/* link in freelist chain */
+	int 		freePre;		/* previous link in freelist chain */
 
 	LWLockId	io_in_progress_lock;	/* to wait for I/O to complete */
 	LWLockId	content_lock;	/* to lock access to buffer contents */
@@ -145,8 +146,10 @@ typedef struct sbufdesc
  * The freeNext field is either the index of the next freelist entry,
  * or one of these special values:
  */
-#define FREENEXT_END_OF_LIST	(-1)
+#define FREE_END_OF_LIST	(-1)        /* added for double linked list */
 #define FREENEXT_NOT_IN_LIST	(-2)
+#define FREEPRE_NOT_IN_LIST	(-3)
+      
 
 /*
  * Macros for acquiring/releasing a shared buffer header's spinlock.
