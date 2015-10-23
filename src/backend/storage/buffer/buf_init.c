@@ -124,6 +124,7 @@ InitBufferPool(void)
 			 * management of this list is done by freelist.c.
 			 */
 			buf->freeNext = i + 1;
+                        buf->freePre = i - 1;
 
 			buf->io_in_progress_lock = LWLockAssign();
 			buf->content_lock = LWLockAssign();
@@ -131,6 +132,7 @@ InitBufferPool(void)
 
 		/* Correct last entry of linked list */
 		BufferDescriptors[NBuffers - 1].freeNext = FREE_END_OF_LIST;
+                BufferDescriptors[0].freePre = FREE_END_OF_LIST;
 	}
 
 	/* Init other shared buffer-management stuff */
