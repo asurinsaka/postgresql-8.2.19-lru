@@ -817,6 +817,11 @@ PinBuffer(volatile BufferDesc *buf)
 	if (PrivateRefCount[b] == 0)
 	{
 		LockBufHdr(buf);
+                /* we need to move it out from freelist*/
+                if(buf->refcount == 0)
+                {
+                    GetBufferFromFree(buf);
+                }
 		buf->refcount++;
 		result = (buf->flags & BM_VALID) != 0;
 		UnlockBufHdr(buf);
@@ -847,7 +852,14 @@ PinBuffer_Locked(volatile BufferDesc *buf)
 	int			b = buf->buf_id;
 
 	if (PrivateRefCount[b] == 0)
-		buf->refcount++;
+        {
+                if(buf->refcount == 0)
+                {
+                    GetBufferFromFree(buf);
+                }
+                buf->refcount++;
+        }
+		
 	UnlockBufHdr(buf);
 	PrivateRefCount[b]++;
 	Assert(PrivateRefCount[b] > 0);
@@ -922,6 +934,11 @@ UnpinBuffer(volatile BufferDesc *buf, bool fixOwner, bool normalAccess)
 			UnlockBufHdr(buf);
 			ProcSendSignal(wait_backend_pid);
 		}
+                else if(buf->refcount == 0)
+                {
+                        /* we need to put it back into the free list*/
+                        StrategyFreeBuffer(buf, false);
+                }
 		else
 			UnlockBufHdr(buf);
 

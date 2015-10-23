@@ -77,7 +77,7 @@ StrategyGetBuffer(void)
 		/* Unconditionally remove buffer from freelist */
 		StrategyControl->firstFreeBuffer = buf->freeNext;
 		buf->freeNext = FREENEXT_NOT_IN_LIST;
-                buf->freePre = FREENEXT_NOT_IN_LIST;
+                buf->freePre = FREEPRE_NOT_IN_LIST;
 
 		/*
 		 * If the buffer is pinned or has a nonzero usage_count, we cannot use
@@ -103,7 +103,20 @@ StrategyGetBuffer(void)
 	/* not reached */
 	return NULL;
 }
-
+/* move a buffer out from a free list when it is called*/
+void
+GetBufferFromFree(volatile BufferDesc *buf)
+{
+    LWLockAcquire(BufFreelistLock, LW_EXCLUSIVE);
+    if(buf->freeNext >= 0)
+    {
+        BufferDescriptors[buf->freeNext].freePre = buf->freePre;
+        BufferDescriptors[buf->freePre].freeNext = buf->freeNext;
+        buf->freeNext = FREENEXT_NOT_IN_LIST;
+        buf->freePre = FREEPRE_NOT_IN_LIST;
+    }
+    LWLockRelease(BufFreelistLock);
+}
 /*
  * StrategyFreeBuffer: put a buffer on the freelist
  *
